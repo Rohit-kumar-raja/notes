@@ -1,3 +1,4 @@
 {
-    "timetracer.mode": "off"
+    "timetracer.mode": "off",
+    "ROS2.distro": "jazzy"
 }
