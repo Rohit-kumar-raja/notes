@@ -22,6 +22,9 @@ setup(
         ],
     },
     entry_points={
-        "console_scripts": ["server=ros2_service.server:main"],
+        "console_scripts": [
+            "server=ros2_service.server:main",
+            "client=ros2_service.client:main",
+        ],
     },
 )

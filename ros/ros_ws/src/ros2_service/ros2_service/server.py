@@ -5,7 +5,7 @@ from std_srvs.srv import SetBool
 
 class Ros2ServerNode(Node):
     def __init__(self):
-        super().__init__("service_servier")
+        super().__init__("service_server")
         self.service_server_ = self.create_service(
             SetBool, "service_server", self.service_callback
         )
