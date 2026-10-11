@@ -14,6 +14,27 @@
       <render_engine>ogre2</render_engine>
     </plugin>
 
+    <!-- Built-in Gazebo GUI Sensor Panels -->
+    <gui fullscreen="0">
+      <!-- 1. Live Camera Stream Window -->
+      <plugin filename="ImageDisplay" name="AMR Front Camera">
+        <gz-gui>
+          <title>AMR Camera Feed</title>
+          <property key="state" type="string">docked</property>
+          <property type="double" key="width">340</property>
+          <property type="double" key="height">260</property>
+        </gz-gui>
+        <topic>/camera/image_raw</topic>
+      </plugin>
+
+      <!-- 2. LiDAR 3D Ray Visualizer -->
+      <plugin filename="VisualizeLidar" name="Visualize Lidar">
+        <gz-gui>
+          <property key="state" type="string">docked</property>
+        </gz-gui>
+      </plugin>
+    </gui>
+
     <!-- Factory Ambient Directional Light (Sun/Roof Skylight) -->
     <light type="directional" name="skylight">
       <cast_shadows>true</cast_shadows>
