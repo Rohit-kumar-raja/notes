@@ -12,18 +12,11 @@ def generate_launch_description():
     pkg_amr = get_package_share_directory("amr")
     models_dir = os.path.join(pkg_amr, "models")
     default_world = os.path.join(pkg_amr, "worlds", "factory_world.sdf")
-    rviz_config = os.path.join(pkg_amr, "rviz", "amr_view.rviz")
-
     # Launch arguments
     world_arg = DeclareLaunchArgument(
         "world",
         default_value=default_world,
         description="Path to the SDF world file to load",
-    )
-    rviz_arg = DeclareLaunchArgument(
-        "use_rviz",
-        default_value="false",
-        description="Whether to start RViz2 for sensor visualization",
     )
     joy_arg = DeclareLaunchArgument(
         "use_joystick",
@@ -89,19 +82,8 @@ def generate_launch_description():
         output="screen",
     )
 
-    # RViz2 Node
-    rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        arguments=["-d", rviz_config],
-        condition=IfCondition(LaunchConfiguration("use_rviz")),
-        output="screen",
-    )
-
     return LaunchDescription([
         world_arg,
-        rviz_arg,
         joy_arg,
         set_gz_resource_path,
         set_sdf_path,
@@ -109,5 +91,4 @@ def generate_launch_description():
         bridge,
         joy_node,
         joy_viewer_node,
-        rviz_node,
     ])

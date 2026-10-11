@@ -14,23 +14,145 @@
       <render_engine>ogre2</render_engine>
     </plugin>
 
-    <!-- Built-in Gazebo GUI Sensor Panels -->
+    <!-- Gazebo GUI Configuration with 3D Scene Manager and Right Side Sensors -->
     <gui fullscreen="0">
-      <!-- 1. Live Camera Stream Window -->
+      <!-- 3D Viewport (Positioned overlooking the factory) -->
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.5 0.5 0.5</ambient_light>
+        <background_color>0.7 0.7 0.7</background_color>
+        <camera_pose>0 -16 12 0 0.6 1.57</camera_pose>
+      </plugin>
+
+      <!-- Essential plugins that connect simulation entities to 3D rendering -->
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="SelectEntities" name="Select Entities">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- Simulation Play / Pause / Step Controls (Bottom Left) -->
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+        <use_event>true</use_event>
+      </plugin>
+
+      <!-- ================= RIGHT SIDE SENSOR PANELS ================= -->
+
+      <!-- 1. Live Camera Stream (Top-Right) -->
       <plugin filename="ImageDisplay" name="AMR Front Camera">
         <gz-gui>
           <title>AMR Camera Feed</title>
-          <property key="state" type="string">docked</property>
-          <property type="double" key="width">340</property>
-          <property type="double" key="height">260</property>
+          <property key="state" type="string">floating</property>
+          <property type="double" key="width">360</property>
+          <property type="double" key="height">270</property>
+          <property type="double" key="z">2</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="top" target="top"/>
+          </anchors>
         </gz-gui>
         <topic>/camera/image_raw</topic>
+        <topic_picker>false</topic_picker>
       </plugin>
 
-      <!-- 2. LiDAR 3D Ray Visualizer -->
+      <!-- 2. LiDAR Visualizer (Right side below Camera) -->
       <plugin filename="VisualizeLidar" name="Visualize Lidar">
         <gz-gui>
-          <property key="state" type="string">docked</property>
+          <title>LiDAR Visualizer</title>
+          <property key="state" type="string">floating</property>
+          <property type="double" key="width">360</property>
+          <property type="double" key="height">160</property>
+          <property type="double" key="z">2</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+      </plugin>
+
+      <!-- Entity Tree & Component Inspector (Dockable) -->
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <gz-gui>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property type="string" key="state">docked</property>
         </gz-gui>
       </plugin>
     </gui>
@@ -108,7 +230,7 @@
     <include>
       <uri>model://amr_robot</uri>
       <name>amr_robot</name>
-      <pose>0 0 0.08 0 0 0</pose>
+      <pose>0 0 0.105 0 0 0</pose>
     </include>
 
   </world>
