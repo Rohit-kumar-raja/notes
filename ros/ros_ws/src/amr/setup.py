@@ -41,6 +41,7 @@ setup(
     entry_points={
         "console_scripts": [
             "joy_viewer = amr.joy_viewer:main",
+            "collision_monitor = amr.collision_monitor:main",
         ],
     },
 )

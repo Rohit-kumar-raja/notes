@@ -2,13 +2,22 @@ import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
+from std_msgs.msg import String
 
 
 class JoyViewer(Node):
+    last_status = String("")
+
     def __init__(self):
         super().__init__("joy_viewer")
         self.create_subscription(Joy, "/joy", self.cb, 10)
         self.publisher_ = self.create_publisher(Twist, "cmd_vel", 10)
+        self.subscription_ = self.create_subscription(
+            String, "collision_status", self.collision_status
+        )
+
+    def collision_status(self, msg: String):
+        self.last_status = msg.data
 
     def cb(self, msg: Joy):
         twist = Twist()
