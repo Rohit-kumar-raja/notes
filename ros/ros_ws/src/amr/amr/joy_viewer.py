@@ -11,19 +11,24 @@ class JoyViewer(Node):
         self.publisher_ = self.create_publisher(Twist, "cmd_vel", 10)
 
     def cb(self, msg: Joy):
-        self.get_logger().info(f"msg {msg.buttons}")
         twist = Twist()
         speed = 1.2
 
-        if msg.buttons[6] or msg.buttons[7]:
-            speed = 4.0
-        if msg.buttons[6] and msg.buttons[7]:
-            speed = 8.0
+        # Check turbo buttons safely
+        if len(msg.buttons) > 7:
+            if msg.buttons[6] and msg.buttons[7]:
+                speed = 3.0
+            elif msg.buttons[6] or msg.buttons[7]:
+                speed = 2.0
+        elif len(msg.buttons) > 5:
+            if msg.buttons[4] or msg.buttons[5]:
+                speed = 2.0
 
-        twist.linear.x = speed * float(
-            msg.axes[1]
-        )  # left stick up/down -> forward/back
-        twist.angular.z = msg.axes[0]  # left stick left/right -> turn
+        linear_axis = float(msg.axes[1]) if len(msg.axes) > 1 else 0.0
+        angular_axis = float(msg.axes[0]) if len(msg.axes) > 0 else 0.0
+
+        twist.linear.x = speed * linear_axis
+        twist.angular.z = 1.8 * angular_axis
         self.publisher_.publish(twist)
 
 
