@@ -5,35 +5,33 @@ from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Joy, LaserScan
-from std_msgs.msg import String
 
 
 class JoyViewer(Node):
-    FRONT_HIT = 0.20  # m, from LiDAR
+    FRONT_HIT = 0.50  # m
     FRONT_WARN = 0.55  # m
-    REAR_HIT = 0.35  # m
+    REAR_HIT = 0.45  # m
     SIDE_HIT = 0.18  # m
-    status = ""
 
     def __init__(self):
         super().__init__("joy_viewer")
         self.create_subscription(Joy, "/joy", self.cb, 10)
         self.publisher_ = self.create_publisher(Twist, "cmd_vel", 10)
-
         self.create_subscription(
             LaserScan, "/scan", self.scan_cb, qos_profile_sensor_data
         )
-        self.actual_speed = 0.0
-        self.cmd_speed = 0.0
 
-    def collision_status(self, msg: String):
-        self.last_status = msg.data
+        inf = float("inf")
+        self.d_front = inf
+        self.d_rear = inf
+        self.d_left = inf
+        self.d_right = inf
+        self.status = "CLEAR"
 
     def cb(self, msg: Joy):
         twist = Twist()
         speed = 1.2
 
-        # Check turbo buttons safely
         if len(msg.buttons) > 7:
             if msg.buttons[6] and msg.buttons[7]:
                 speed = 3.0
@@ -45,11 +43,25 @@ class JoyViewer(Node):
         linear_axis = float(msg.axes[1]) if len(msg.axes) > 1 else 0.0
         angular_axis = float(msg.axes[0]) if len(msg.axes) > 0 else 0.0
 
-        twist.linear.x = speed * linear_axis
-        twist.angular.z = 1.8 * angular_axis
-        
-        if self.status!="HIT":
-            self.publisher_.publish(twist)
+        lin = speed * linear_axis
+        ang = 1.8 * angular_axis
+
+        # Direction-aware gating: block only motion TOWARD the obstacle
+        if lin > 0.0:
+            if self.d_front <= self.FRONT_HIT:
+                lin = 0.0
+            elif self.d_front <= self.FRONT_WARN:
+                lin = min(lin, 0.3)  # slow down in warning zone
+        elif lin < 0.0:
+            if self.d_rear <= self.REAR_HIT:
+                lin = 0.0
+
+        twist.linear.x = lin
+        twist.angular.z = ang
+
+        # Always publish (zero when blocked) so the robot actually stops
+        # and so reverse/turn commands go through.
+        self.publisher_.publish(twist)
 
     def scan_cb(self, msg: LaserScan):
         front, left, right, rear = [], [], [], []
@@ -58,6 +70,8 @@ class JoyViewer(Node):
         for r in msg.ranges:
             if math.isfinite(r) and msg.range_min <= r <= msg.range_max:
                 deg = math.degrees(angle)
+                # normalize to [-180, 180]
+                deg = (deg + 180.0) % 360.0 - 180.0
                 if -45.0 <= deg <= 45.0:
                     front.append(r)
                 elif 45.0 < deg < 135.0:
@@ -69,32 +83,22 @@ class JoyViewer(Node):
             angle += msg.angle_increment
 
         inf = float("inf")
-        d_front = min(front, default=inf)
-        d_left = min(left, default=inf)
-        d_right = min(right, default=inf)
-        d_rear = min(rear, default=inf)
-
-        # Motor stall: commanded to move but not moving, with obstacle ahead
-        stall = (
-            abs(self.cmd_speed) > 0.3
-            and abs(self.actual_speed) < 0.05
-            and d_front < self.FRONT_WARN
-        )
+        self.d_front = min(front, default=inf)
+        self.d_left = min(left, default=inf)
+        self.d_right = min(right, default=inf)
+        self.d_rear = min(rear, default=inf)
 
         if (
-            d_front <= self.FRONT_HIT
-            or d_rear <= self.REAR_HIT
-            or d_left <= self.SIDE_HIT
-            or d_right <= self.SIDE_HIT
-            or stall
+            self.d_front <= self.FRONT_HIT
+            or self.d_rear <= self.REAR_HIT
+            or self.d_left <= self.SIDE_HIT
+            or self.d_right <= self.SIDE_HIT
         ):
             self.status = "HIT"
-        elif d_front <= self.FRONT_WARN:
+        elif self.d_front <= self.FRONT_WARN:
             self.status = "WARNING"
         else:
             self.status = "CLEAR"
-
-        # self.get_logger().info(f"Status: {self.status}")
 
 
 def main():
