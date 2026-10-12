@@ -1,10 +1,13 @@
 import math
+import subprocess
+import time
 
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Joy, LaserScan
+from .utils import play_alarm, stop_alarm
 
 
 class JoyViewer(Node):
@@ -52,9 +55,8 @@ class JoyViewer(Node):
                 lin = 0.0
             elif self.d_front <= self.FRONT_WARN:
                 lin = min(lin, 0.3)  # slow down in warning zone
-        elif lin < 0.0:
-            if self.d_rear <= self.REAR_HIT:
-                lin = 0.0
+        elif lin < 0.0 and self.d_rear <= self.REAR_HIT:
+            lin = 0.0
 
         twist.linear.x = lin
         twist.angular.z = ang
@@ -95,10 +97,13 @@ class JoyViewer(Node):
             or self.d_right <= self.SIDE_HIT
         ):
             self.status = "HIT"
+            play_alarm()
+
         elif self.d_front <= self.FRONT_WARN:
             self.status = "WARNING"
         else:
             self.status = "CLEAR"
+            stop_alarm()
 
 
 def main():
