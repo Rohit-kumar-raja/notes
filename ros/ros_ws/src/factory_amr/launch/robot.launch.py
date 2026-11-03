@@ -12,16 +12,27 @@ def generate_launch_description():
     pkg_amr = get_package_share_directory("amr")
     models_dir = os.path.join(pkg_amr, "models")
     default_world = os.path.join(pkg_amr, "worlds", "factory_world.sdf")
+    default_urdf = os.path.join(pkg_amr, "urdf", "amr.urdf")
+
+    # Read URDF description
+    with open(default_urdf, "r") as f:
+        robot_desc = f.read()
+
     # Launch arguments
     world_arg = DeclareLaunchArgument(
         "world",
         default_value=default_world,
         description="Path to the SDF world file to load",
     )
-    joy_arg = DeclareLaunchArgument(
-        "use_joystick",
+    use_sim_time_arg = DeclareLaunchArgument(
+        "use_sim_time",
         default_value="true",
-        description="Whether to start joystick teleoperation nodes",
+        description="Use simulation (Gazebo) clock if true",
+    )
+    rviz_arg = DeclareLaunchArgument(
+        "use_rviz",
+        default_value="false",
+        description="Whether to start RViz",
     )
 
     # Ensure Gazebo and SDFormat can find the custom amr_robot and factory models
@@ -45,12 +56,7 @@ def generate_launch_description():
         output="screen",
     )
 
-    # ROS 2 <-> Gazebo Bridge for AMR Control and Sensors
-    # 1. /cmd_vel -> Robot drive command (ROS 2 -> Gazebo)
-    # 2. /odom    <- Robot wheel odometry (Gazebo -> ROS 2)
-    # 3. /scan    <- 2D LiDAR scan data (Gazebo -> ROS 2)
-    # 4. /camera/image_raw  <- Forward Camera RGB stream (Gazebo -> ROS 2)
-    # 5. /camera/camera_info <- Camera calibration info (Gazebo -> ROS 2)
+    # ROS 2 <-> Gazebo Bridge for AMR Control, Sensors, Clock, and TF
     bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
@@ -61,34 +67,53 @@ def generate_launch_description():
             "/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan",
             "/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image",
             "/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",
+            "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+            "/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
         ],
+        parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
         output="screen",
     )
 
-    # Joystick Nodes
-    joy_node = Node(
-        package="joy",
-        executable="joy_node",
-        name="joy_node",
-        condition=IfCondition(LaunchConfiguration("use_joystick")),
+    # Robot State Publisher (publishes transforms from URDF)
+    robot_state_publisher_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        name="robot_state_publisher",
         output="screen",
+        parameters=[{
+            "use_sim_time": LaunchConfiguration("use_sim_time"),
+            "robot_description": robot_desc,
+        }],
     )
 
-    joy_viewer_node = Node(
-        package="amr",
-        executable="joy_viewer",
-        name="joy_viewer",
-        condition=IfCondition(LaunchConfiguration("use_joystick")),
+    # Joint State Publisher (publishes wheel joint states for complete TF tree)
+    joint_state_publisher_node = Node(
+        package="joint_state_publisher",
+        executable="joint_state_publisher",
+        name="joint_state_publisher",
         output="screen",
+        parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
+    )
+
+    # Optional basic RViz node
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="screen",
+        condition=IfCondition(LaunchConfiguration("use_rviz")),
+        parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
     )
 
     return LaunchDescription([
         world_arg,
-        joy_arg,
+        use_sim_time_arg,
+        rviz_arg,
         set_gz_resource_path,
         set_sdf_path,
         gz_sim,
         bridge,
-        joy_node,
-        joy_viewer_node,
+        robot_state_publisher_node,
+        joint_state_publisher_node,
+        rviz_node,
     ])

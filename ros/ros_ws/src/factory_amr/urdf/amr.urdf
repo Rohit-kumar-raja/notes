@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<robot name="amr_robot">
+
+  <!-- Base footprint: projection of robot center on ground plane -->
+  <link name="base_footprint"/>
+
+  <!-- Base link: chassis origin (0.1m above ground) -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="8.0"/>
+      <inertia ixx="0.08" ixy="0.0" ixz="0.0" iyy="0.12" iyz="0.0" izz="0.16"/>
+    </inertial>
+    <!-- Lower Chassis Visual (Dark Industrial Grey) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.50 0.32 0.08"/>
+      </geometry>
+      <material name="dark_grey">
+        <color rgba="0.15 0.15 0.17 1.0"/>
+      </material>
+    </visual>
+    <!-- Upper Shell Visual (Industrial Safety Yellow) -->
+    <visual>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.46 0.28 0.04"/>
+      </geometry>
+      <material name="safety_yellow">
+        <color rgba="0.95 0.70 0.05 1.0"/>
+      </material>
+    </visual>
+    <!-- Front Direction Indicator -->
+    <visual>
+      <origin xyz="0.24 0 0.02" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.02 0.20 0.03"/>
+      </geometry>
+      <material name="neon_green">
+        <color rgba="0.1 0.9 0.3 1.0"/>
+      </material>
+    </visual>
+    <!-- Collision geometry -->
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.50 0.32 0.12"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_footprint_to_base_link" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.10" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Alias link for body if referenced -->
+  <link name="body"/>
+  <joint name="base_link_to_body" type="fixed">
+    <parent link="base_link"/>
+    <child link="body"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- LiDAR links and mounts -->
+  <link name="lidar_mount">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.04" length="0.06"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+  </link>
+
+  <joint name="base_link_to_lidar_mount" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_mount"/>
+    <origin xyz="0.08 0 0.08" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo LiDAR sensor frame: amr_robot/body/lidar -->
+  <link name="amr_robot/body/lidar">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.045" length="0.035"/>
+      </geometry>
+      <material name="lidar_blue">
+        <color rgba="0.1 0.35 0.85 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_link_to_amr_lidar" type="fixed">
+    <parent link="base_link"/>
+    <child link="amr_robot/body/lidar"/>
+    <origin xyz="0.08 0 0.13" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Standard laser_frame alias -->
+  <link name="laser_frame"/>
+  <joint name="amr_lidar_to_laser_frame" type="fixed">
+    <parent link="amr_robot/body/lidar"/>
+    <child link="laser_frame"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Camera link and housing -->
+  <link name="camera_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.03 0.08 0.03"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_link_to_camera_link" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.26 0 0.04" rpy="0 0 0"/>
+  </joint>
+
+  <link name="amr_robot/body/camera"/>
+  <joint name="camera_link_to_amr_camera" type="fixed">
+    <parent link="camera_link"/>
+    <child link="amr_robot/body/camera"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Wheels -->
+  <!-- Front Left -->
+  <link name="front_left_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.045"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+  <joint name="front_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="front_left_wheel"/>
+    <origin xyz="0.15 0.19 -0.02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Rear Left -->
+  <link name="rear_left_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.045"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+  <joint name="rear_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="rear_left_wheel"/>
+    <origin xyz="-0.15 0.19 -0.02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Front Right -->
+  <link name="front_right_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.045"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+  <joint name="front_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="front_right_wheel"/>
+    <origin xyz="0.15 -0.19 -0.02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Rear Right -->
+  <link name="rear_right_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.570796 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.045"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+  <joint name="rear_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="rear_right_wheel"/>
+    <origin xyz="-0.15 -0.19 -0.02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+</robot>
