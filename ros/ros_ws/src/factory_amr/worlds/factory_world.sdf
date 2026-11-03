@@ -1,0 +1,237 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="factory_world">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- Essential Gazebo Plugins -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands" />
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster" />
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Gazebo GUI Configuration with 3D Scene Manager and Right Side Sensors -->
+    <gui fullscreen="0">
+      <!-- 3D Viewport (Positioned overlooking the factory) -->
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.5 0.5 0.5</ambient_light>
+        <background_color>0.7 0.7 0.7</background_color>
+        <camera_pose>0 -16 12 0 0.6 1.57</camera_pose>
+      </plugin>
+
+      <!-- Essential plugins that connect simulation entities to 3D rendering -->
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="SelectEntities" name="Select Entities">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- Simulation Play / Pause / Step Controls (Bottom Left) -->
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+        <use_event>true</use_event>
+      </plugin>
+
+      <!-- ================= RIGHT SIDE SENSOR PANELS ================= -->
+
+      <!-- 1. Live Camera Stream (Top-Right) -->
+      <plugin filename="ImageDisplay" name="AMR Front Camera">
+        <gz-gui>
+          <title>AMR Camera Feed</title>
+          <property key="state" type="string">floating</property>
+          <property type="double" key="width">360</property>
+          <property type="double" key="height">270</property>
+          <property type="double" key="z">2</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="top" target="top"/>
+          </anchors>
+        </gz-gui>
+        <topic>/camera/image_raw</topic>
+        <topic_picker>false</topic_picker>
+      </plugin>
+
+      <!-- 2. LiDAR Visualizer (Right side below Camera) -->
+      <plugin filename="VisualizeLidar" name="Visualize Lidar">
+        <gz-gui>
+          <title>LiDAR Visualizer</title>
+          <property key="state" type="string">floating</property>
+          <property type="double" key="width">360</property>
+          <property type="double" key="height">160</property>
+          <property type="double" key="z">2</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+      </plugin>
+
+      <!-- Entity Tree & Component Inspector (Dockable) -->
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <gz-gui>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+      </plugin>
+    </gui>
+
+    <!-- Factory Ambient Directional Light (Sun/Roof Skylight) -->
+    <light type="directional" name="skylight">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 15 0 0 0</pose>
+      <diffuse>0.85 0.85 0.85 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.3 0.2 -0.9</direction>
+    </light>
+
+    <!-- Overhead Warehouse Bay Light 1 -->
+    <light type="point" name="bay_light_1">
+      <pose>-5 0 4.5 0 0 0</pose>
+      <diffuse>0.6 0.6 0.65 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>20</range>
+        <constant>0.3</constant>
+        <linear>0.05</linear>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- Overhead Warehouse Bay Light 2 -->
+    <light type="point" name="bay_light_2">
+      <pose>5 0 4.5 0 0 0</pose>
+      <diffuse>0.6 0.6 0.65 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>20</range>
+        <constant>0.3</constant>
+        <linear>0.05</linear>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- Factory Floor Ground Plane -->
+    <model name="factory_floor">
+      <static>true</static>
+      <link name="floor_link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>30 22</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>30 22</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.40 0.42 0.45 1</ambient>
+            <diffuse>0.40 0.42 0.45 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Factory Environment Model (Walls, Racks, Pallets, Obstacles) -->
+    <include>
+      <uri>model://factory</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <!-- AMR Robot Model (Chassis, Skid-steer 4WD, LiDAR, RGB Camera) -->
+    <include>
+      <uri>model://amr_robot</uri>
+      <name>amr_robot</name>
+      <pose>0 0 0.105 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>
