@@ -2,61 +2,105 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     pkg_amr = get_package_share_directory('factory_amr')
-    pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
-
-    default_params = os.path.join(pkg_amr, 'config', 'slam_toolbox_params.yaml')
-    default_nav2_params = os.path.join(pkg_amr, 'config', 'nav2_params.yaml')
+    models_dir = os.path.join(pkg_amr, 'models')
+    default_world = os.path.join(pkg_amr, 'worlds', 'factory_world.sdf')
+    default_urdf = os.path.join(pkg_amr, 'urdf', 'amr.urdf')
+    default_slam_params = os.path.join(pkg_amr, 'config', 'slam_toolbox_params.yaml')
     default_rviz_config = os.path.join(pkg_amr, 'rviz', 'slam.rviz')
 
+    with open(default_urdf, 'r') as f:
+        robot_desc = f.read()
+
     # Launch arguments
-    declare_use_sim_time = DeclareLaunchArgument(
+    world_arg = DeclareLaunchArgument(
+        'world',
+        default_value=default_world,
+        description='Path to the SDF world file to load',
+    )
+    use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
         default_value='true',
         description='Use simulation (Gazebo) clock if true',
     )
-    declare_slam_params = DeclareLaunchArgument(
+    params_file_arg = DeclareLaunchArgument(
         'params_file',
-        default_value=default_params,
+        default_value=default_slam_params,
         description='Full path to the slam_toolbox parameters file',
     )
-    declare_rviz_config = DeclareLaunchArgument(
+    rviz_config_arg = DeclareLaunchArgument(
         'rviz_config',
         default_value=default_rviz_config,
         description='Full path to the RViz configuration file',
     )
-    declare_start_sim = DeclareLaunchArgument(
-        'start_sim',
-        default_value='true',
-        description='Whether to launch Gazebo simulation and robot bridge',
-    )
-    declare_use_nav = DeclareLaunchArgument(
-        'use_nav',
-        default_value='true',
-        description='Whether to launch Nav2 navigation stack during mapping',
+
+    # Gazebo resource paths
+    existing_gz_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    new_gz_path = f'{models_dir}:{existing_gz_path}' if existing_gz_path else models_dir
+    set_gz_resource_path = SetEnvironmentVariable(
+        name='GZ_SIM_RESOURCE_PATH',
+        value=new_gz_path,
     )
 
-    # 1. Include robot launch (Gazebo + Bridges + Robot State Publisher)
-    robot_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_amr, 'launch', 'robot.launch.py')
-        ),
-        condition=IfCondition(LaunchConfiguration('start_sim')),
-        launch_arguments={
+    existing_sdf_path = os.environ.get('SDF_PATH', '')
+    new_sdf_path = f'{models_dir}:{existing_sdf_path}' if existing_sdf_path else models_dir
+    set_sdf_path = SetEnvironmentVariable(
+        name='SDF_PATH',
+        value=new_sdf_path,
+    )
+
+    # 1. Gazebo Sim
+    gz_sim = ExecuteProcess(
+        cmd=['gz', 'sim', '-r', LaunchConfiguration('world')],
+        output='screen',
+    )
+
+    # 2. ROS 2 <-> Gazebo Bridge
+    bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='amr_ros_gz_bridge',
+        arguments=[
+            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            '/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+        ],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+        output='screen',
+    )
+
+    # 3. Robot State Publisher (URDF transforms)
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[{
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'use_rviz': 'false',
-        }.items(),
+            'robot_description': robot_desc,
+        }],
     )
 
-    # 2. SLAM Toolbox Online Async Node
+    # 4. Joint State Publisher
+    joint_state_publisher_node = Node(
+        package='joint_state_publisher',
+        executable='joint_state_publisher',
+        name='joint_state_publisher',
+        output='screen',
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+    )
+
+    # 5. SLAM Toolbox (Online Async)
     slam_toolbox_node = Node(
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
@@ -68,21 +112,7 @@ def generate_launch_description():
         ],
     )
 
-    # 3. Nav2 Navigation Stack (Planner, Controller, Recovery) for goal-directed mapping
-    navigation_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_nav2_bringup, 'launch', 'navigation_launch.py')
-        ),
-        condition=IfCondition(LaunchConfiguration('use_nav')),
-        launch_arguments={
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'params_file': default_nav2_params,
-            'autostart': 'true',
-            'use_composition': 'false',
-        }.items(),
-    )
-
-    # 4. RViz2 visualization configured for SLAM and full control
+    # 6. RViz2 configured for SLAM mapping
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
@@ -93,13 +123,16 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        declare_use_sim_time,
-        declare_slam_params,
-        declare_rviz_config,
-        declare_start_sim,
-        declare_use_nav,
-        robot_launch,
+        world_arg,
+        use_sim_time_arg,
+        params_file_arg,
+        rviz_config_arg,
+        set_gz_resource_path,
+        set_sdf_path,
+        gz_sim,
+        bridge,
+        robot_state_publisher_node,
+        joint_state_publisher_node,
         slam_toolbox_node,
-        navigation_launch,
         rviz_node,
     ])

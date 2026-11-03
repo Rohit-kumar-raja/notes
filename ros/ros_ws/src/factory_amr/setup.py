@@ -44,6 +44,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'teleop = factory_amr.teleop:main',
             'joy_viewer = factory_amr.joy_viewer:main',
         ],
     },
