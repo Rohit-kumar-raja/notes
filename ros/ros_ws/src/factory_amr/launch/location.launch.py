@@ -10,98 +10,87 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    pkg_amr = get_package_share_directory("amr")
-    pkg_nav2_bringup = get_package_share_directory("nav2_bringup")
+    pkg_amr = get_package_share_directory('factory_amr')
+    pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
 
-    default_map_file = os.path.join(pkg_amr, "maps", "factory_map.yaml")
-    default_nav2_params = os.path.join(pkg_amr, "config", "nav2_params.yaml")
-    default_rviz_config = os.path.join(pkg_amr, "rviz", "nav2.rviz")
+    default_map_file = os.path.join(pkg_amr, 'maps', 'factory_map.yaml')
+    default_nav2_params = os.path.join(pkg_amr, 'config', 'nav2_params.yaml')
+    default_rviz_config = os.path.join(pkg_amr, 'rviz', 'nav2.rviz')
 
     # Launch arguments
     declare_map = DeclareLaunchArgument(
-        "map",
+        'map',
         default_value=default_map_file,
-        description="Full path to the map YAML file to load",
+        description='Full path to the map YAML file to load',
     )
     declare_use_sim_time = DeclareLaunchArgument(
-        "use_sim_time",
-        default_value="true",
-        description="Use simulation (Gazebo) clock if true",
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock if true',
     )
     declare_params_file = DeclareLaunchArgument(
-        "params_file",
+        'params_file',
         default_value=default_nav2_params,
-        description="Full path to the Nav2 parameters file",
+        description='Full path to the Nav2 parameters file',
     )
     declare_rviz_config = DeclareLaunchArgument(
-        "rviz_config",
+        'rviz_config',
         default_value=default_rviz_config,
-        description="Full path to the RViz configuration file",
+        description='Full path to the RViz configuration file',
     )
     declare_start_sim = DeclareLaunchArgument(
-        "start_sim",
-        default_value="true",
-        description="Whether to launch Gazebo simulation and robot bridge",
+        'start_sim',
+        default_value='true',
+        description='Whether to launch Gazebo simulation and robot bridge',
     )
-    declare_navigation = DeclareLaunchArgument(
-        "navigation",
-        default_value="true",
-        description="Whether to launch full Nav2 navigation stack with localization",
+    declare_use_rviz = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='true',
+        description='Whether to start RViz visualization',
     )
     declare_autostart = DeclareLaunchArgument(
-        "autostart",
-        default_value="true",
-        description="Automatically startup the Nav2 stack lifecycle nodes",
+        'autostart',
+        default_value='true',
+        description='Automatically startup the Nav2 stack lifecycle nodes',
     )
 
     # 1. Include robot launch (Gazebo + Bridges + Robot State Publisher)
     robot_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_amr, "launch", "robot.launch.py")
+            os.path.join(pkg_amr, 'launch', 'robot.launch.py')
         ),
-        condition=IfCondition(LaunchConfiguration("start_sim")),
+        condition=IfCondition(LaunchConfiguration('start_sim')),
         launch_arguments={
-            "use_sim_time": LaunchConfiguration("use_sim_time"),
-            "use_rviz": "false",
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'use_rviz': 'false',
         }.items(),
     )
 
-    # 2. Nav2 Localization (Map Server + AMCL)
-    localization_launch = IncludeLaunchDescription(
+    # 2. Unified Nav2 Bringup (Localization + Map Server + Navigation Stack)
+    nav2_bringup_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_nav2_bringup, "launch", "localization_launch.py")
+            os.path.join(pkg_nav2_bringup, 'launch', 'bringup_launch.py')
         ),
         launch_arguments={
-            "map": LaunchConfiguration("map"),
-            "use_sim_time": LaunchConfiguration("use_sim_time"),
-            "params_file": LaunchConfiguration("params_file"),
-            "autostart": LaunchConfiguration("autostart"),
-            "use_composition": "false",
+            'slam': 'False',
+            'map': LaunchConfiguration('map'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'params_file': LaunchConfiguration('params_file'),
+            'autostart': LaunchConfiguration('autostart'),
+            'use_composition': 'False',
+            'use_localization': 'True',
         }.items(),
     )
 
-    # 3. Nav2 Navigation Stack (Planner, Controller, Recoveries)
-    navigation_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_nav2_bringup, "launch", "navigation_launch.py")
-        ),
-        condition=IfCondition(LaunchConfiguration("navigation")),
-        launch_arguments={
-            "use_sim_time": LaunchConfiguration("use_sim_time"),
-            "params_file": LaunchConfiguration("params_file"),
-            "autostart": LaunchConfiguration("autostart"),
-            "use_composition": "false",
-        }.items(),
-    )
-
-    # 4. RViz2 visualization with Navigation 2 panels and tools
+    # 3. RViz2 visualization with Navigation 2 panels and tools
     rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2_navigation",
-        output="screen",
-        arguments=["-d", LaunchConfiguration("rviz_config")],
-        parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
+        condition=IfCondition(LaunchConfiguration('use_rviz')),
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2_navigation',
+        output='screen',
+        arguments=['-d', LaunchConfiguration('rviz_config')],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
     )
 
     return LaunchDescription([
@@ -110,10 +99,9 @@ def generate_launch_description():
         declare_params_file,
         declare_rviz_config,
         declare_start_sim,
-        declare_navigation,
+        declare_use_rviz,
         declare_autostart,
         robot_launch,
-        localization_launch,
-        navigation_launch,
+        nav2_bringup_launch,
         rviz_node,
     ])

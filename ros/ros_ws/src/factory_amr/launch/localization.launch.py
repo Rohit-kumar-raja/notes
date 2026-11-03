@@ -7,11 +7,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
-    pkg_amr = get_package_share_directory("amr")
+    pkg_amr = get_package_share_directory('factory_amr')
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(pkg_amr, "launch", "location.launch.py")
+                os.path.join(pkg_amr, 'launch', 'location.launch.py')
             )
         )
     ])

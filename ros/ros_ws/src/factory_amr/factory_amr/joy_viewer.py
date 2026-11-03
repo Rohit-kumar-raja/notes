@@ -1,7 +1,7 @@
 import math
 
-import rclpy
 from geometry_msgs.msg import Twist
+import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Joy, LaserScan
@@ -16,19 +16,19 @@ class JoyViewer(Node):
     SIDE_HIT = 0.18  # m
 
     def __init__(self):
-        super().__init__("joy_viewer")
-        self.create_subscription(Joy, "/joy", self.cb, 10)
-        self.publisher_ = self.create_publisher(Twist, "cmd_vel", 10)
+        super().__init__('joy_viewer')
+        self.create_subscription(Joy, '/joy', self.cb, 10)
+        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
         self.create_subscription(
-            LaserScan, "/scan", self.scan_cb, qos_profile_sensor_data
+            LaserScan, '/scan', self.scan_cb, qos_profile_sensor_data
         )
 
-        inf = float("inf")
+        inf = float('inf')
         self.d_front = inf
         self.d_rear = inf
         self.d_left = inf
         self.d_right = inf
-        self.status = "CLEAR"
+        self.status = 'CLEAR'
 
     def cb(self, msg: Joy):
         twist = Twist()
@@ -83,7 +83,7 @@ class JoyViewer(Node):
                     rear.append(r)
             angle += msg.angle_increment
 
-        inf = float("inf")
+        inf = float('inf')
         self.d_front = min(front, default=inf)
         self.d_left = min(left, default=inf)
         self.d_right = min(right, default=inf)
@@ -95,13 +95,13 @@ class JoyViewer(Node):
             or self.d_left <= self.SIDE_HIT
             or self.d_right <= self.SIDE_HIT
         ):
-            self.status = "HIT"
+            self.status = 'HIT'
             play_alarm()
 
         elif self.d_front <= self.FRONT_WARN:
-            self.status = "WARNING"
+            self.status = 'WARNING'
         else:
-            self.status = "CLEAR"
+            self.status = 'CLEAR'
             stop_alarm()
 
 
@@ -110,5 +110,5 @@ def main():
     rclpy.spin(JoyViewer())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
