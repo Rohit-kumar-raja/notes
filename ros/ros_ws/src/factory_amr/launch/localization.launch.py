@@ -8,6 +8,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     SetEnvironmentVariable,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -58,6 +59,11 @@ def generate_launch_description():
         default_value='true',
         description='Automatically startup the Nav2 stack lifecycle nodes',
     )
+    teleop_arg = DeclareLaunchArgument(
+        'teleop',
+        default_value='false',
+        description='Whether to launch keyboard teleop in a separate terminal window',
+    )
 
     # Gazebo resource paths
     existing_gz_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
@@ -86,7 +92,7 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='amr_ros_gz_bridge',
         arguments=[
-            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            '/cmd_vel@geometry_msgs/msg/TwistStamped]gz.msgs.Twist',
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             '/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
@@ -145,6 +151,13 @@ def generate_launch_description():
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
     )
 
+    # 7. Optional Teleop Process in a new terminal window
+    teleop_process = ExecuteProcess(
+        cmd=['x-terminal-emulator', '-e', 'ros2', 'run', 'factory_amr', 'teleop'],
+        condition=IfCondition(LaunchConfiguration('teleop')),
+        output='screen',
+    )
+
     return LaunchDescription([
         map_arg,
         world_arg,
@@ -152,6 +165,7 @@ def generate_launch_description():
         params_file_arg,
         rviz_config_arg,
         autostart_arg,
+        teleop_arg,
         set_gz_resource_path,
         set_sdf_path,
         gz_sim,
@@ -160,4 +174,5 @@ def generate_launch_description():
         joint_state_publisher_node,
         nav2_bringup_launch,
         rviz_node,
+        teleop_process,
     ])

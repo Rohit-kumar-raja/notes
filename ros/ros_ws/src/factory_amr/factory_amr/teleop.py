@@ -3,7 +3,7 @@ import sys
 import termios
 import tty
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 import rclpy
 from rclpy.node import Node
 
@@ -39,17 +39,19 @@ class AMRTeleop(Node):
 
     def __init__(self):
         super().__init__('amr_teleop')
-        self.publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.publisher = self.create_publisher(TwistStamped, '/cmd_vel', 10)
         self.speed = 0.5  # m/s
         self.turn = 1.0   # rad/s
         self.x = 0.0
         self.th = 0.0
 
     def publish_twist(self, linear, angular):
-        twist = Twist()
-        twist.linear.x = float(linear)
-        twist.angular.z = float(angular)
-        self.publisher.publish(twist)
+        msg = TwistStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'base_footprint'
+        msg.twist.linear.x = float(linear)
+        msg.twist.angular.z = float(angular)
+        self.publisher.publish(msg)
 
     def stop(self):
         self.publish_twist(0.0, 0.0)
