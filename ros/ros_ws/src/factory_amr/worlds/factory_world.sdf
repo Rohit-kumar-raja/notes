@@ -27,7 +27,7 @@
         <scene>scene</scene>
         <ambient_light>0.5 0.5 0.5</ambient_light>
         <background_color>0.7 0.7 0.7</background_color>
-        <camera_pose>0 -16 12 0 0.6 1.57</camera_pose>
+        <camera_pose>0 -24 22 0 0.72 1.57</camera_pose>
       </plugin>
 
       <!-- Essential plugins that connect simulation entities to 3D rendering -->
@@ -166,33 +166,50 @@
       <direction>-0.3 0.2 -0.9</direction>
     </light>
 
-    <!-- Overhead Warehouse Bay Light 1 -->
-    <light type="point" name="bay_light_1">
-      <pose>-5 0 4.5 0 0 0</pose>
+    <!-- Overhead Warehouse Bay Light Grid (6 High-Bay LED Fixtures) -->
+    <light type="point" name="bay_light_nw">
+      <pose>-14 8 6.5 0 0 0</pose>
       <diffuse>0.6 0.6 0.65 1</diffuse>
       <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.3</constant>
-        <linear>0.05</linear>
-        <quadratic>0.01</quadratic>
-      </attenuation>
+      <attenuation><range>25</range><constant>0.3</constant><linear>0.04</linear><quadratic>0.008</quadratic></attenuation>
     </light>
 
-    <!-- Overhead Warehouse Bay Light 2 -->
-    <light type="point" name="bay_light_2">
-      <pose>5 0 4.5 0 0 0</pose>
+    <light type="point" name="bay_light_nc">
+      <pose>0 8 6.5 0 0 0</pose>
+      <diffuse>0.65 0.65 0.70 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation><range>25</range><constant>0.3</constant><linear>0.04</linear><quadratic>0.008</quadratic></attenuation>
+    </light>
+
+    <light type="point" name="bay_light_ne">
+      <pose>14 8 6.5 0 0 0</pose>
       <diffuse>0.6 0.6 0.65 1</diffuse>
       <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.3</constant>
-        <linear>0.05</linear>
-        <quadratic>0.01</quadratic>
-      </attenuation>
+      <attenuation><range>25</range><constant>0.3</constant><linear>0.04</linear><quadratic>0.008</quadratic></attenuation>
     </light>
 
-    <!-- Factory Floor Ground Plane -->
+    <light type="point" name="bay_light_sw">
+      <pose>-14 -8 6.5 0 0 0</pose>
+      <diffuse>0.6 0.6 0.65 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation><range>25</range><constant>0.3</constant><linear>0.04</linear><quadratic>0.008</quadratic></attenuation>
+    </light>
+
+    <light type="point" name="bay_light_sc">
+      <pose>0 -8 6.5 0 0 0</pose>
+      <diffuse>0.65 0.65 0.70 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation><range>25</range><constant>0.3</constant><linear>0.04</linear><quadratic>0.008</quadratic></attenuation>
+    </light>
+
+    <light type="point" name="bay_light_se">
+      <pose>14 -8 6.5 0 0 0</pose>
+      <diffuse>0.6 0.6 0.65 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation><range>25</range><constant>0.3</constant><linear>0.04</linear><quadratic>0.008</quadratic></attenuation>
+    </light>
+
+    <!-- Factory Floor Ground Plane (56m x 40m) -->
     <model name="factory_floor">
       <static>true</static>
       <link name="floor_link">
@@ -200,7 +217,7 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>30 22</size>
+              <size>56 40</size>
             </plane>
           </geometry>
         </collision>
@@ -208,11 +225,11 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>30 22</size>
+              <size>56 40</size>
             </plane>
           </geometry>
           <material>
-            <ambient>0.40 0.42 0.45 1</ambient>
+            <ambient>0.38 0.40 0.43 1</ambient>
             <diffuse>0.40 0.42 0.45 1</diffuse>
             <specular>0.1 0.1 0.1 1</specular>
           </material>
